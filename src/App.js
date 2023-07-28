@@ -11,32 +11,42 @@ function App() {
   const [data, setData] = useState(null);
   const [reqmonthName, setReqmonthName] = useState(null)
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////DataFetch
-
-  useEffect(() => {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthName = months[Number(month.split("-")[1]) - 1];
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////DataFetch
+  async function fetchData() {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = months[Number(month.split('-')[1]) - 1];
     if (monthName) {
-      setReqmonthName(monthName)
-      async function fetchData() {
-        try {
-          const req = { month: monthName };
-          const response = await axios.post("http://localhost:8080/tasks", req);
-          setData(response.data);
-        } catch (error) {
-          console.log(error);
-        }
+      setReqmonthName(monthName);
+      try {
+        const req = { month: monthName };
+        const response = await axios.post("http://localhost:8080/tasks", req);
+        setData(response.data);
+      } catch (error) {
+        console.log(error);
+        alert("Please check or restart the server")
       }
-      fetchData();
     }
-  }, [month]);
+  };
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////////MonthName Functionality
+  /////////////////////////////////////////////////////////////////////////////////////////////////////Update Data on Response
+
+  async function updateDataAndFetch() {
+    await fetchData();
+  };
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////MonthChange Functionality
+
 
   function monthChanger(e) {
     const { value } = e.target;
     setMonth(value);
   }
+
+  useEffect(() => {
+    fetchData();
+  }, [month]);
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////Add Task Functionality
   function addTaskChangeHandler(e) {
     const { value } = e.target;
@@ -51,6 +61,7 @@ function App() {
         return
       }
       await axios.post("http://localhost:8080/api/tasks", req)
+      updateDataAndFetch()
       setAddTask("");
     } catch (error) {
       console.log(error);
@@ -62,6 +73,7 @@ function App() {
     const req = { month: reqmonthName, day: `${key}`, id: `${id}`, action: "deleteTask" }
     try {
       await axios.post("http://localhost:8080/api/tasks", req)
+      updateDataAndFetch()
     } catch (error) {
       console.log(error);
     }
@@ -73,6 +85,7 @@ function App() {
     const req = { month: reqmonthName, day: `${key}`, id: `${id}`, action: "markComplete" }
     try {
       await axios.post("http://localhost:8080/api/tasks", req)
+      updateDataAndFetch()
     } catch (error) {
       console.log(error);
     }
@@ -114,10 +127,10 @@ function App() {
                 className='flex flex-col justify-center w-80 items-center gap-3 ' >
                 {tasks.map((task, index) => (
                   <li key={index}
-                    className='bg-black text-white text-xl p-2  border border-white rounded-lg gap-3 flex shadow-md'>
+                    className={task.status !== "pending" ? "bg-green-500 text-black text-xl p-2  border border-white rounded-lg gap-3 flex shadow-md" :
+                      "bg-black text-white text-xl p-2  border border-white rounded-lg gap-3 flex shadow-md"}>
                     <button
-                      onClick={() => markComplete(dayKey, task.taskid)}
-                      className={task.status !== "pending" ? "text-green-500" : ""} >
+                      onClick={() => markComplete(dayKey, task.taskid)} >
                       <TiTickOutline />
                     </button>
                     {task.task}
